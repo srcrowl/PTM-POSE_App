@@ -14,12 +14,8 @@ def project_cache(splicing_data, chromosome_col, strand_col, region_start_col, r
     """
     Projection function with caching
     """
-    #download ptm coordinates if not already present
-    if 'ptm_coordinates' not in st.session_state:
-        st.session_state['ptm_coordinates'] = pose_config.download_ptm_coordinates()
-
     #run projection
-    splicing_data, spliced_ptms = project.project_ptms_onto_splice_events(splicing_data, ptm_coordinates = st.session_state['ptm_coordinates'], chromosome_col = chromosome_col, strand_col = strand_col, region_start_col = region_start_col, region_end_col = region_end_col, event_id_col = event_id_col, dPSI_col=dPSI_col, sig_col = sig_col, gene_col = gene_col, coordinate_type=coordinate_type, taskbar_label = 'Projecting PTMs', PROCESSES = 1)
+    splicing_data, spliced_ptms = project.project_ptms_onto_splice_events(splicing_data, chromosome_col = chromosome_col, strand_col = strand_col, region_start_col = region_start_col, region_end_col = region_end_col, event_id_col = event_id_col, dPSI_col=dPSI_col, sig_col = sig_col, gene_col = gene_col, coordinate_type=coordinate_type, taskbar_label = 'Projecting PTMs', PROCESSES = 1)
     return splicing_data, spliced_ptms
 
 @st.cache_data(show_spinner = False)
@@ -27,7 +23,7 @@ def get_flanking_changes(splicing_data, chromosome_col, strand_col, spliced_regi
     """
     Flanking sequence function with caching
     """
-    altered_flanks = flanking_sequences.get_flanking_changes_from_splice_data(splicing_data, ptm_coordinates = st.session_state['ptm_coordinates'], chromosome_col = chromosome_col, strand_col = strand_col, spliced_region_start_col = spliced_region_start_col, spliced_region_end_col = spliced_region_end_col, first_flank_start_col = first_flank_start_col, first_flank_end_col = first_flank_end_col, second_flank_start_col = second_flank_start_col, second_flank_end_col = second_flank_end_col, dPSI_col=dPSI_col, sig_col = sig_col, gene_col = gene_col,  event_id_col = event_id_col, coordinate_type=coordinate_type)
+    altered_flanks = flanking_sequences.get_flanking_changes_from_splice_data(splicing_data, chromosome_col = chromosome_col, strand_col = strand_col, spliced_region_start_col = spliced_region_start_col, spliced_region_end_col = spliced_region_end_col, first_flank_start_col = first_flank_start_col, first_flank_end_col = first_flank_end_col, second_flank_start_col = second_flank_start_col, second_flank_end_col = second_flank_end_col, dPSI_col=dPSI_col, sig_col = sig_col, gene_col = gene_col,  event_id_col = event_id_col, coordinate_type=coordinate_type)
     return altered_flanks
     
 st.title('PTM-POSE: Projecting PTMs onto splicing events')
@@ -58,6 +54,7 @@ if splicing_file is not None:
     region_end_col = cols[3].selectbox('Spliced region end:', list(splicing_data.columns), key = 'region_end_col', index = None,  placeholder = 'Choose a column')
     st.write('\n\n\n\n\n')
 
+    st.write(pose_config.ptm_coordinates.head())
     if None not in [chromosome_col, strand_col, region_start_col, region_end_col]:
         coordinate_type = st.radio('Coordinate system to use:', ['hg38', 'hg19', 'hg18'], horizontal = True)
 
@@ -104,7 +101,6 @@ if splicing_file is not None:
             if find_flanking_sequences:
                 with st.spinner('Finding altered flanking sequences...'):
                     st.session_state['altered_flanks'] = get_flanking_changes(splicing_data, chromosome_col = chromosome_col, strand_col = strand_col, spliced_region_start_col = region_start_col, spliced_region_end_col = region_end_col, first_flank_start_col = first_flank_start_col, first_flank_end_col = first_flank_end_col, second_flank_start_col = second_flank_start_col, second_flank_end_col = second_flank_end_col, dPSI_col=dPSI_col, sig_col = sig_col, gene_col = gene_name_col,  event_id_col = event_id_col, coordinate_type=coordinate_type)
-                    st.session_state['altered_flanks'] = st.session_state['altered_flanks'][~st.session_state['altered_flanks']['Matched']]
 
             if 'altered_flanks' in st.session_state:
                 #output spliced ptms
